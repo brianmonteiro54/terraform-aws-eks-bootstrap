@@ -34,7 +34,7 @@ Cada passo é controlado por uma feature flag (`install_argocd`, `install_metric
 
 ```hcl
 module "eks_bootstrap" {
-  source = "git::https://github.com/brianmonteiro54/terraform-aws-eks-bootstrap.git//modules/eks-bootstrap?ref=v1.0.0"
+  source = "git::https://github.com/brianmonteiro54/terraform-aws-eks-bootstrap.git//modules/eks-bootstrap?ref=<commit-sha>"
 
   cluster_name                  = module.eks.cluster_name
   vpc_id                        = module.vpc.vpc_id

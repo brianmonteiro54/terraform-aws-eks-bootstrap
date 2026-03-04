@@ -113,23 +113,23 @@ resource "aws_instance" "bootstrap" {
   }
 
   user_data = base64encode(templatefile("${path.module}/scripts/bootstrap.sh", {
-    cluster_name               = var.cluster_name
-    region                     = data.aws_region.current.name
-    kubectl_version            = var.kubectl_version
-    helm_version               = var.helm_version
-    argocd_namespace           = var.argocd_namespace
-    argocd_version             = var.argocd_version
-    external_secrets_version   = var.external_secrets_version
-    namespaces_yaml            = var.namespaces_yaml
-    ingress_nginx_yaml         = var.ingress_nginx_yaml
-    ingress_nginx_acm_yaml     = var.ingress_nginx_acm_yaml
-    external_secrets_values    = var.external_secrets_values
-    install_argocd             = var.install_argocd
-    install_ingress_nginx      = var.install_ingress_nginx
-    install_external_secrets   = var.install_external_secrets
-    install_metrics_server     = var.install_metrics_server
-    apply_namespaces           = var.apply_namespaces
-    extra_commands             = var.extra_commands
+    cluster_name             = var.cluster_name
+    region                   = data.aws_region.current.name
+    kubectl_version          = var.kubectl_version
+    helm_version             = var.helm_version
+    argocd_namespace         = var.argocd_namespace
+    argocd_version           = var.argocd_version
+    external_secrets_version = var.external_secrets_version
+    namespaces_yaml          = var.namespaces_yaml
+    ingress_nginx_yaml       = var.ingress_nginx_yaml
+    ingress_nginx_acm_yaml   = var.ingress_nginx_acm_yaml
+    external_secrets_values  = var.external_secrets_values
+    install_argocd           = var.install_argocd
+    install_ingress_nginx    = var.install_ingress_nginx
+    install_external_secrets = var.install_external_secrets
+    install_metrics_server   = var.install_metrics_server
+    apply_namespaces         = var.apply_namespaces
+    extra_commands           = var.extra_commands
   }))
 
   root_block_device {
