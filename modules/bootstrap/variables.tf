@@ -124,6 +124,27 @@ variable "external_secrets_version" {
 }
 
 # -----------------------------------------------------------------------------
+# ArgoCD Ingress
+# -----------------------------------------------------------------------------
+variable "argocd_ingress_enabled" {
+  description = "Criar Ingress NGINX para o ArgoCD (requer install_ingress_nginx = true)"
+  type        = bool
+  default     = false
+}
+
+variable "argocd_ingress_host" {
+  description = "Host do Ingress do ArgoCD (ex: toggle.pt, meudominio.com)"
+  type        = string
+  default     = ""
+}
+
+variable "argocd_ingress_path" {
+  description = "Path prefix do Ingress do ArgoCD (ex: /argocd)"
+  type        = string
+  default     = "/argocd"
+}
+
+# -----------------------------------------------------------------------------
 # Instance Configuration
 # -----------------------------------------------------------------------------
 variable "instance_type" {

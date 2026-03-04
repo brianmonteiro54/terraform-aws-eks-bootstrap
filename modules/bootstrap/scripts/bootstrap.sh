@@ -351,7 +351,11 @@ install_argocd() {
       --namespace "$ARGOCD_NAMESPACE" \
       --version "$ARGOCD_VERSION" \
       --set server.service.type=ClusterIP \
+%{ if argocd_ingress_enabled ~}
+      --set "server.extraArgs={--insecure,--rootpath=${argocd_ingress_path}}" \
+%{ else ~}
       --set "server.extraArgs={--insecure}" \
+%{ endif ~}
       --set configs.params."server\.insecure"=true \
       --set dex.enabled=false \
       --set notifications.enabled=false \
@@ -360,6 +364,34 @@ install_argocd() {
   log "  Aguardando rollout (máx 3 min)..."
   kubectl -n "$ARGOCD_NAMESPACE" rollout status deployment/argocd-server --timeout=180s
 
+%{ if argocd_ingress_enabled && argocd_ingress_host != "" ~}
+  log "  Aplicando Ingress do ArgoCD (path: ${argocd_ingress_path})..."
+  cat <<'ARGOCD_INGRESS_EOF' | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-ingress
+  namespace: ${argocd_namespace}
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ${argocd_ingress_host}
+      http:
+        paths:
+          - path: ${argocd_ingress_path}(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
+ARGOCD_INGRESS_EOF
+%{ endif ~}
+
   # Capturar senha
   local argocd_pass
   argocd_pass=$(kubectl -n "$ARGOCD_NAMESPACE" get secret argocd-initial-admin-secret \
@@ -367,6 +399,9 @@ install_argocd() {
 
   log "  ┌──────────────────────────────────────────┐"
   log "  │ 🔑 ArgoCD Password: $argocd_pass"
+%{ if argocd_ingress_enabled && argocd_ingress_host != "" ~}
+  log "  │ 🌐 URL: https://${argocd_ingress_host}${argocd_ingress_path}"
+%{ endif ~}
   log "  │ 📌 Salve! Visível no System Log da EC2  │"
   log "  └──────────────────────────────────────────┘"
 }

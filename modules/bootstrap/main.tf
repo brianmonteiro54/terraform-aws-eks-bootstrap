@@ -132,6 +132,9 @@ resource "aws_instance" "bootstrap" {
     install_metrics_server   = var.install_metrics_server
     apply_namespaces         = var.apply_namespaces
     extra_commands           = var.extra_commands
+    argocd_ingress_enabled   = var.argocd_ingress_enabled
+    argocd_ingress_host      = var.argocd_ingress_host
+    argocd_ingress_path      = var.argocd_ingress_path
   }))
 
   root_block_device {
