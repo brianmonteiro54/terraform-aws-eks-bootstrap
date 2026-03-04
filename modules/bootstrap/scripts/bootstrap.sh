@@ -213,7 +213,7 @@ configure_kubeconfig() {
   local timeout=300
   local elapsed=0
   while [[ $elapsed -lt $timeout ]]; do
-    READY_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c " Ready" || echo "0")
+    READY_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c " Ready" 2>/dev/null) || READY_NODES=0
     if [[ "$READY_NODES" -gt 0 ]]; then
       log "  ✅ $READY_NODES node(s) Ready"
       kubectl get nodes -o wide
