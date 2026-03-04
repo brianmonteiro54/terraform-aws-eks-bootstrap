@@ -147,3 +147,4 @@ resource "aws_instance" "bootstrap" {
     Temporary = "true"
   })
 }
+
