@@ -209,13 +209,23 @@ configure_kubeconfig() {
   retry 10 15 "aws eks update-kubeconfig" \
     aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$REGION"
 
-  log "  Aguardando nodes ficarem Ready (máx 5 min)..."
-  local timeout=300
+  log "  Debug: testando kubectl..."
+  kubectl cluster-info 2>&1 || true
+
+  log "  Aguardando nodes ficarem Ready (max 10 min)..."
+  local timeout=600
   local elapsed=0
   while [[ $elapsed -lt $timeout ]]; do
-    READY_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c " Ready" 2>/dev/null) || READY_NODES=0
+    READY_NODES=0
+    NODE_OUTPUT=$(kubectl get nodes --no-headers 2>&1) || true
+    log "  Debug output: $NODE_OUTPUT"
+
+    if echo "$NODE_OUTPUT" | grep -q " Ready"; then
+      READY_NODES=$(echo "$NODE_OUTPUT" | grep -c " Ready") || READY_NODES=0
+    fi
+
     if [[ "$READY_NODES" -gt 0 ]]; then
-      log "  ✅ $READY_NODES node(s) Ready"
+      log "  $READY_NODES node(s) Ready"
       kubectl get nodes -o wide
       return 0
     fi
@@ -224,8 +234,7 @@ configure_kubeconfig() {
     log "  Aguardando nodes... ($${elapsed}s/$${timeout}s)"
   done
 
-  # Se não tem node Ready, é falha crítica
-  log "  ❌ Nenhum node Ready após $${timeout}s"
+  log "  Nenhum node Ready apos $${timeout}s"
   return 1
 }
 run_critical "Kubeconfig + Aguardar EKS" configure_kubeconfig
