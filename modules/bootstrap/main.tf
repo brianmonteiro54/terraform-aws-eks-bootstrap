@@ -114,7 +114,7 @@ resource "aws_instance" "bootstrap" {
     http_put_response_hop_limit = 2
   }
 
-  user_data = base64encode(templatefile("${path.module}/scripts/bootstrap.sh", {
+  user_data_base64 = base64gzip(templatefile("${path.module}/scripts/bootstrap.sh", {
     cluster_name             = var.cluster_name
     region                   = data.aws_region.current.id
     kubectl_version          = var.kubectl_version
