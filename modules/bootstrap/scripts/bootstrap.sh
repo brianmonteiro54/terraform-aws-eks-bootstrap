@@ -52,9 +52,9 @@ retry() {
       return 0
     fi
     if [[ $attempt -lt $max_attempts ]]; then
-      local wait=$((delay * attempt))
-      log "  ⏳ Falhou. Retry em ${wait}s..."
-      sleep "$wait"
+      local wait_time=$((delay * attempt))
+      log "  ⏳ Falhou. Retry em $${wait_time}s..."
+      sleep "$wait_time"
     fi
   done
   return 1
@@ -221,11 +221,11 @@ configure_kubeconfig() {
     fi
     sleep 15
     elapsed=$((elapsed + 15))
-    log "  Aguardando nodes... (${elapsed}s/${timeout}s)"
+    log "  Aguardando nodes... ($${elapsed}s/$${timeout}s)"
   done
 
   # Se não tem node Ready, é falha crítica
-  log "  ❌ Nenhum node Ready após ${timeout}s"
+  log "  ❌ Nenhum node Ready após $${timeout}s"
   return 1
 }
 run_critical "Kubeconfig + Aguardar EKS" configure_kubeconfig

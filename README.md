@@ -18,7 +18,7 @@ A instância usa `instance_initiated_shutdown_behavior = "terminate"`. Quando o 
 ## O que é instalado (na ordem)
 
 | Passo | Componente | Método |
-|-------|-----------|--------|
+| ----- | ---------- | ------ |
 | 1 | kubectl, helm, aws-cli | Binários |
 | 2 | kubeconfig | `aws eks update-kubeconfig` |
 | 3 | Namespaces | `kubectl apply -f` |

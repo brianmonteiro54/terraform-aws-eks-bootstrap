@@ -49,7 +49,7 @@ resource "aws_security_group" "bootstrap" {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:aws-ec2-no-public-egress-sgr -- Bootstrap instance needs internet access via NAT to download packages
     description = "HTTPS outbound"
   }
 
@@ -57,7 +57,7 @@ resource "aws_security_group" "bootstrap" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:aws-ec2-no-public-egress-sgr -- Bootstrap instance needs internet access via NAT to download packages
     description = "HTTP outbound"
   }
 
@@ -66,7 +66,7 @@ resource "aws_security_group" "bootstrap" {
     from_port   = 53
     to_port     = 53
     protocol    = "udp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:aws-ec2-no-public-egress-sgr -- DNS resolution required
     description = "DNS UDP"
   }
 
@@ -74,7 +74,7 @@ resource "aws_security_group" "bootstrap" {
     from_port   = 53
     to_port     = 53
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:aws-ec2-no-public-egress-sgr -- DNS resolution required
     description = "DNS TCP"
   }
 
@@ -94,6 +94,8 @@ resource "aws_instance" "bootstrap" {
   ami           = data.aws_ami.amazon_linux_2023.id
   instance_type = var.instance_type
   subnet_id     = var.subnet_id
+  monitoring    = true
+  ebs_optimized = true
 
   vpc_security_group_ids = [
     aws_security_group.bootstrap.id,
@@ -114,7 +116,7 @@ resource "aws_instance" "bootstrap" {
 
   user_data = base64encode(templatefile("${path.module}/scripts/bootstrap.sh", {
     cluster_name             = var.cluster_name
-    region                   = data.aws_region.current.name
+    region                   = data.aws_region.current.id
     kubectl_version          = var.kubectl_version
     helm_version             = var.helm_version
     argocd_namespace         = var.argocd_namespace

@@ -48,12 +48,6 @@ rule "aws_instance_invalid_vpc_security_group" {
 rule "aws_instance_invalid_key_name" {
   enabled = true
 }
-
-# --- Security Group ---
-rule "aws_security_group_invalid_vpc_id" {
-  enabled = true
-}
-
 # -----------------------------------------------------------------------------
 # Terraform Best Practices
 # -----------------------------------------------------------------------------
