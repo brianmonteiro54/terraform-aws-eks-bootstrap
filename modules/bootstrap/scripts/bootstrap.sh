@@ -351,12 +351,11 @@ install_argocd() {
       --namespace "$ARGOCD_NAMESPACE" \
       --version "$ARGOCD_VERSION" \
       --set server.service.type=ClusterIP \
-%{ if argocd_ingress_enabled ~}
-      --set "server.extraArgs={--insecure,--rootpath=${argocd_ingress_path}}" \
-%{ else ~}
       --set "server.extraArgs={--insecure}" \
-%{ endif ~}
       --set configs.params."server\.insecure"=true \
+%{ if argocd_ingress_enabled ~}
+      --set configs.params."server\.rootpath"="${argocd_ingress_path}" \
+%{ endif ~}
       --set dex.enabled=false \
       --set notifications.enabled=false \
       --wait --timeout 8m0s
@@ -375,15 +374,14 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
     - host: ${argocd_ingress_host}
       http:
         paths:
-          - path: ${argocd_ingress_path}(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: ${argocd_ingress_path}
+            pathType: Prefix
             backend:
               service:
                 name: argocd-server
