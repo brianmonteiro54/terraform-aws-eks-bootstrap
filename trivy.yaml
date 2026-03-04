@@ -1,0 +1,27 @@
+# =============================================================================
+# Trivy Configuration
+# https://aquasecurity.github.io/trivy/latest/docs/references/configuration/config-file/
+# =============================================================================
+
+scan:
+  # Scan only IaC misconfigurations
+  scanners:
+    - misconfig
+
+misconfiguration:
+  # Include passed checks in the output
+  include-non-failures: false
+
+  # Terraform-specific settings
+  terraform:
+    vars: []
+    tf-exclude-downloaded-modules: true
+
+severity:
+  - MEDIUM
+  - HIGH
+  - CRITICAL
+
+# Output settings
+format: table
+exit-code: 1

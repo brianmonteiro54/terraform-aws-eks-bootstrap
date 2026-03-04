@@ -1,0 +1,38 @@
+name: Terraform CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '**.hcl'
+      - '.github/workflows/terraform-ci.yml'
+      - '.tflint.hcl'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '**.hcl'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: write
+
+jobs:
+  ci:
+    uses: brianmonteiro54/devops-template/.github/workflows/terraform-ci.yml@v2.0.0
+    with:
+      terraform-docs-working-dir: modules/bootstrap
+      enable-plan-preview: false
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
