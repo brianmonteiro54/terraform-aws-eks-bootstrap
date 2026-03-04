@@ -100,3 +100,4 @@ repos:
           - --fix
           - --disable=MD013  # Line length
           - --disable=MD033  # Inline HTML
+          - --disable=MD060
