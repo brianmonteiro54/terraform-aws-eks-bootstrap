@@ -110,7 +110,7 @@ cleanup() {
   log "  Instância será terminada em 30 segundos..."
   log "══════════════════════════════════════════════════"
   sleep 30
-  shutdown -h now
+  #shutdown -h now
 }
 trap cleanup EXIT
 
