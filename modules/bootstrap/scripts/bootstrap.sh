@@ -14,6 +14,8 @@ set -uo pipefail
 # ── Variáveis (Terraform templatefile) ───────────────────────────────────────
 CLUSTER_NAME="${cluster_name}"
 REGION="${region}"
+export HOME=/root
+export KUBECONFIG=/root/.kube/config
 KUBECTL_VERSION="${kubectl_version}"
 HELM_VERSION="${helm_version}"
 ARGOCD_NAMESPACE="${argocd_namespace}"
