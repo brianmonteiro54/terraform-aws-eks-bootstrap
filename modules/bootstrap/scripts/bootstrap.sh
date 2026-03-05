@@ -263,6 +263,10 @@ install_metrics_server() {
   retry 3 10 "Apply Metrics Server" \
     kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
+  # Em re-runs, o deployment pode estar com progress deadline expirado
+  # Restart garante um rollout limpo
+  kubectl -n kube-system rollout restart deployment/metrics-server 2>/dev/null || true
+
   log "  Aguardando rollout (máx 3 min)..."
   kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
 }
@@ -351,12 +355,11 @@ install_argocd() {
       --namespace "$ARGOCD_NAMESPACE" \
       --version "$ARGOCD_VERSION" \
       --set server.service.type=ClusterIP \
-%{ if argocd_ingress_enabled ~}
-      --set "server.extraArgs={--insecure,--basehref=${argocd_ingress_path}}" \
-%{ else ~}
-      --set "server.extraArgs={--insecure}" \
-%{ endif ~}
       --set configs.params."server\.insecure"=true \
+%{ if argocd_ingress_enabled && argocd_ingress_host != "" ~}
+      --set configs.params."server\.rootpath"="${argocd_ingress_path}" \
+      --set configs.cm.url="https://${argocd_ingress_host}${argocd_ingress_path}" \
+%{ endif ~}
       --set dex.enabled=false \
       --set notifications.enabled=false \
       --wait --timeout 8m0s
@@ -375,15 +378,14 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
     - host: ${argocd_ingress_host}
       http:
         paths:
-          - path: ${argocd_ingress_path}(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: ${argocd_ingress_path}
+            pathType: Prefix
             backend:
               service:
                 name: argocd-server
