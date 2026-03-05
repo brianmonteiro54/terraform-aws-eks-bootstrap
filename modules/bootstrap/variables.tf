@@ -106,9 +106,9 @@ variable "helm_version" {
 }
 
 variable "argocd_version" {
-  description = "Versão do ArgoCD Helm chart"
+  description = "Versão do ArgoCD Helm chart (>= 7.7.0 tem bug de rootpath duplicado no login, usar 7.6.12)"
   type        = string
-  default     = "7.8.23"
+  default     = "7.6.12"
 }
 
 variable "argocd_namespace" {
@@ -121,6 +121,12 @@ variable "external_secrets_version" {
   description = "Versão do External Secrets Helm chart"
   type        = string
   default     = "0.17.0"
+}
+
+variable "metrics_server_version" {
+  description = "Versão do Metrics Server (v0.8.0+ tem bug com appProtocol, usar v0.7.2)"
+  type        = string
+  default     = "v0.7.2"
 }
 
 # -----------------------------------------------------------------------------

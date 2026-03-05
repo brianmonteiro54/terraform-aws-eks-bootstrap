@@ -260,17 +260,23 @@ record "Namespaces" "SKIP" "NORMAL"
 # =============================================================================
 %{ if install_metrics_server ~}
 install_metrics_server() {
+  # Usar versão pinada (v0.8.0+ tem bug com appProtocol no Service)
+  local MS_VERSION="${metrics_server_version}"
+  local MS_URL="https://github.com/kubernetes-sigs/metrics-server/releases/download/$MS_VERSION/components.yaml"
+
+  log "  Baixando manifesto Metrics Server $MS_VERSION..."
+  retry 3 10 "Download Metrics Server" \
+    curl -sL "$MS_URL" -o /tmp/metrics-server.yaml
+
+  # EKS: kubelet usa certificados auto-assinados — adicionar --kubelet-insecure-tls
+  log "  Adicionando --kubelet-insecure-tls para compatibilidade com EKS..."
+  sed -i 's/- --metric-resolution=15s/- --metric-resolution=15s\n        - --kubelet-insecure-tls/' /tmp/metrics-server.yaml
+
   retry 3 10 "Apply Metrics Server" \
-    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+    kubectl apply -f /tmp/metrics-server.yaml
 
-  # EKS nodes usam certificados auto-assinados no kubelet
-  log "  Adicionando --kubelet-insecure-tls para EKS..."
-  kubectl -n kube-system patch deployment metrics-server --type='json' \
-    -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]' \
-    2>/dev/null || true
-
-  log "  Aguardando rollout (máx 3 min)..."
-  kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
+  log "  Aguardando rollout (máx 5 min)..."
+  kubectl -n kube-system rollout status deployment/metrics-server --timeout=300s
 }
 run_step "Metrics Server" install_metrics_server
 %{ else ~}
@@ -352,18 +358,14 @@ install_argocd() {
   retry 3 5 "Helm repo add argo" helm repo add argo https://argoproj.github.io/argo-helm
   helm repo update
 
-  # Limpar instalação anterior para evitar valores residuais
-  helm uninstall argocd --namespace "$ARGOCD_NAMESPACE" 2>/dev/null || true
-  sleep 5
-
   retry 3 20 "Helm install argocd" \
-    helm install argocd argo/argo-cd \
+    helm upgrade --install argocd argo/argo-cd \
       --namespace "$ARGOCD_NAMESPACE" \
       --version "$ARGOCD_VERSION" \
       --set server.service.type=ClusterIP \
       --set configs.params."server\.insecure"=true \
 %{ if argocd_ingress_enabled && argocd_ingress_host != "" ~}
-      --set configs.params."server\.basehref"="${argocd_ingress_path}/" \
+      --set configs.params."server\.rootpath"="${argocd_ingress_path}" \
 %{ endif ~}
       --set dex.enabled=false \
       --set notifications.enabled=false \
@@ -383,15 +385,14 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
     - host: ${argocd_ingress_host}
       http:
         paths:
-          - path: ${argocd_ingress_path}(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: ${argocd_ingress_path}
+            pathType: Prefix
             backend:
               service:
                 name: argocd-server

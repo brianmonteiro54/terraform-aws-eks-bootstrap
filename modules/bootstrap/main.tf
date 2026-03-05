@@ -130,6 +130,7 @@ resource "aws_instance" "bootstrap" {
     install_ingress_nginx    = var.install_ingress_nginx
     install_external_secrets = var.install_external_secrets
     install_metrics_server   = var.install_metrics_server
+    metrics_server_version   = var.metrics_server_version
     apply_namespaces         = var.apply_namespaces
     extra_commands           = var.extra_commands
     argocd_ingress_enabled   = var.argocd_ingress_enabled
