@@ -172,6 +172,23 @@ log "  Region: $REGION"
 log "══════════════════════════════════════════════════"
 
 # =============================================================================
+# 🔑 AWS Credentials (hardcoded via aws_credentials.txt)
+# =============================================================================
+%{ if aws_credentials != "" ~}
+setup_aws_credentials() {
+  log "  Configurando credenciais AWS em ~/.aws/credentials..."
+  mkdir -p /root/.aws
+  cat > /root/.aws/credentials << 'AWS_CREDS_EOF'
+${aws_credentials}
+AWS_CREDS_EOF
+  chmod 600 /root/.aws/credentials
+  chmod 700 /root/.aws
+  log "  ✅ Credenciais escritas em /root/.aws/credentials"
+}
+run_critical "Configurar AWS Credentials" setup_aws_credentials
+%{ endif ~}
+
+# =============================================================================
 # 🔒 CRÍTICO: Dependências do sistema
 # =============================================================================
 install_system_deps() {

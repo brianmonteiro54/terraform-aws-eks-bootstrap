@@ -26,8 +26,25 @@ variable "eks_cluster_security_group_id" {
 }
 
 variable "iam_instance_profile" {
-  description = "IAM Instance Profile name (ex: LabInstanceProfile no AWS Academy)"
+  description = "IAM Instance Profile name (ex: LabInstanceProfile no AWS Academy). Deixe vazio (\"\") para usar credenciais do scripts/aws_credentials.txt"
   type        = string
+  default     = ""
+}
+
+variable "aws_credentials" {
+  description = <<-EOT
+    Conteúdo do arquivo ~/.aws/credentials a ser escrito na EC2 bootstrap.
+    Use quando a instância não tiver IAM Instance Profile.
+    Formato esperado:
+      [default]
+      aws_access_key_id=ASIA...
+      aws_secret_access_key=...
+      aws_session_token=...     # opcional, necessário para credenciais temporárias (STS/Academy)
+    Deixe vazio ("") para não configurar credenciais via arquivo (use iam_instance_profile).
+  EOT
+  type        = string
+  default     = ""
+  sensitive   = true
 }
 
 # -----------------------------------------------------------------------------
