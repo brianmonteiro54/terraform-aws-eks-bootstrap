@@ -2,13 +2,6 @@
 # =============================================================================
 # EKS Bootstrap Script
 # =============================================================================
-# Dois tipos de passo:
-#   🔒 CRÍTICO  —
-#   🔄 NORMAL   —
-#
-# No final SEMPRE mostra relatório completo do que passou e do que falhou.
-# =============================================================================
-
 set -uo pipefail
 
 # ── Variáveis (Terraform templatefile) ───────────────────────────────────────
@@ -434,6 +427,46 @@ ARGOCD_INGRESS_EOF
 run_step "ArgoCD" install_argocd
 %{ else ~}
 record "ArgoCD" "SKIP" "NORMAL"
+%{ endif ~}
+
+# =============================================================================
+# 🔄 NORMAL: Manifestos adicionais (post-install)
+# =============================================================================
+%{ if length(additional_manifests) > 0 ~}
+%{ if install_argocd ~}
+# ArgoCD instalado: aguardar CRDs (Application, AppProject) ficarem
+# Established antes de aplicar manifestos que podem usá-los.
+wait_argocd_crds() {
+  log "  Aguardando CRD applications.argoproj.io..."
+  retry 6 10 "wait CRD applications.argoproj.io" \
+    kubectl wait --for=condition=Established \
+    crd/applications.argoproj.io --timeout=30s
+  log "  Aguardando CRD appprojects.argoproj.io..."
+  retry 3 5 "wait CRD appprojects.argoproj.io" \
+    kubectl wait --for=condition=Established \
+    crd/appprojects.argoproj.io --timeout=30s
+}
+run_step "Aguardar CRDs do ArgoCD" wait_argocd_crds
+%{ endif ~}
+
+# Escrever cada manifesto em arquivo separado
+mkdir -p /tmp/additional-manifests
+%{ for name, yaml_content in additional_manifests ~}
+cat <<'MANIFEST_EOF' > /tmp/additional-manifests/${name}.yaml
+${yaml_content}
+MANIFEST_EOF
+%{ endfor ~}
+
+# Aplicar cada manifesto em ordem (alfabética), com retry e step próprio
+%{ for name, yaml_content in additional_manifests ~}
+apply_${replace(replace(name, "-", "_"), ".", "_")}() {
+  retry 3 10 "kubectl apply ${name}" \
+    kubectl apply -f /tmp/additional-manifests/${name}.yaml
+}
+run_step "Manifesto: ${name}" apply_${replace(replace(name, "-", "_"), ".", "_")}
+%{ endfor ~}
+%{ else ~}
+record "Manifestos adicionais" "SKIP" "NORMAL"
 %{ endif ~}
 
 # =============================================================================

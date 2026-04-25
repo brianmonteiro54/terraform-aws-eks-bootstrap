@@ -133,6 +133,7 @@ resource "aws_instance" "bootstrap" {
     metrics_server_version   = var.metrics_server_version
     apply_namespaces         = var.apply_namespaces
     extra_commands           = var.extra_commands
+    additional_manifests     = var.additional_manifests
     argocd_ingress_enabled   = var.argocd_ingress_enabled
     argocd_ingress_host      = var.argocd_ingress_host
     argocd_ingress_path      = var.argocd_ingress_path

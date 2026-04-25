@@ -177,6 +177,18 @@ variable "instance_type" {
 }
 
 # -----------------------------------------------------------------------------
+# Manifestos adicionais (post-install)
+# -----------------------------------------------------------------------------
+variable "additional_manifests" {
+  description = <<-EOT
+    Manifestos K8s adicionais para aplicar APÓS namespaces, ingress-nginx,
+    external-secrets e ArgoCD estarem prontos. Mapa de nome → conteúdo YAML.
+  EOT
+  type        = map(string)
+  default     = {}
+}
+
+# -----------------------------------------------------------------------------
 # Extra
 # -----------------------------------------------------------------------------
 variable "extra_commands" {
