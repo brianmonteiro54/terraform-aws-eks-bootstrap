@@ -34,15 +34,19 @@ No modules.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_apply_namespaces"></a> [apply\_namespaces](#input\_apply\_namespaces) | Aplicar namespaces YAML | `bool` | `true` | no |
+| <a name="input_argocd_ingress_enabled"></a> [argocd\_ingress\_enabled](#input\_argocd\_ingress\_enabled) | Criar Ingress NGINX para o ArgoCD (requer install\_ingress\_nginx = true) | `bool` | `false` | no |
+| <a name="input_argocd_ingress_host"></a> [argocd\_ingress\_host](#input\_argocd\_ingress\_host) | Host do Ingress do ArgoCD (ex: toggle.pt, meudominio.com) | `string` | `""` | no |
+| <a name="input_argocd_ingress_path"></a> [argocd\_ingress\_path](#input\_argocd\_ingress\_path) | Path prefix do Ingress do ArgoCD (ex: /argocd) | `string` | `"/argocd"` | no |
 | <a name="input_argocd_namespace"></a> [argocd\_namespace](#input\_argocd\_namespace) | Namespace para o ArgoCD | `string` | `"argocd"` | no |
-| <a name="input_argocd_version"></a> [argocd\_version](#input\_argocd\_version) | Versão do ArgoCD Helm chart | `string` | `"7.8.23"` | no |
+| <a name="input_argocd_version"></a> [argocd\_version](#input\_argocd\_version) | Versão do ArgoCD Helm chart (>= 7.7.0 tem bug de rootpath duplicado no login, usar 7.6.12) | `string` | `"7.6.12"` | no |
+| <a name="input_aws_credentials"></a> [aws\_credentials](#input\_aws\_credentials) | Conteúdo do arquivo ~/.aws/credentials a ser escrito na EC2 bootstrap.<br/>Use quando a instância não tiver IAM Instance Profile.<br/>Formato esperado:<br/>  [default]<br/>  aws\_access\_key\_id=ASIA...<br/>  aws\_secret\_access\_key=...<br/>  aws\_session\_token=...     # opcional, necessário para credenciais temporárias (STS/Academy)<br/>Deixe vazio ("") para não configurar credenciais via arquivo (use iam\_instance\_profile). | `string` | `""` | no |
 | <a name="input_cluster_name"></a> [cluster\_name](#input\_cluster\_name) | Nome do cluster EKS | `string` | n/a | yes |
 | <a name="input_eks_cluster_security_group_id"></a> [eks\_cluster\_security\_group\_id](#input\_eks\_cluster\_security\_group\_id) | Security Group ID do cluster EKS (para comunicação com o API server) | `string` | n/a | yes |
 | <a name="input_external_secrets_values"></a> [external\_secrets\_values](#input\_external\_secrets\_values) | Conteúdo YAML do values.yaml do external-secrets helm chart | `string` | `""` | no |
 | <a name="input_external_secrets_version"></a> [external\_secrets\_version](#input\_external\_secrets\_version) | Versão do External Secrets Helm chart | `string` | `"0.17.0"` | no |
 | <a name="input_extra_commands"></a> [extra\_commands](#input\_extra\_commands) | Comandos extras para executar após todo o setup | `string` | `""` | no |
 | <a name="input_helm_version"></a> [helm\_version](#input\_helm\_version) | Versão do Helm | `string` | `"3.17.3"` | no |
-| <a name="input_iam_instance_profile"></a> [iam\_instance\_profile](#input\_iam\_instance\_profile) | IAM Instance Profile name (ex: LabInstanceProfile no AWS Academy) | `string` | n/a | yes |
+| <a name="input_iam_instance_profile"></a> [iam\_instance\_profile](#input\_iam\_instance\_profile) | IAM Instance Profile name (ex: LabInstanceProfile no AWS Academy). Deixe vazio ("") para usar credenciais do scripts/aws\_credentials.txt | `string` | `""` | no |
 | <a name="input_ingress_nginx_acm_yaml"></a> [ingress\_nginx\_acm\_yaml](#input\_ingress\_nginx\_acm\_yaml) | Conteúdo YAML do Service do ingress-nginx com ACM/NLB | `string` | `""` | no |
 | <a name="input_ingress_nginx_yaml"></a> [ingress\_nginx\_yaml](#input\_ingress\_nginx\_yaml) | Conteúdo YAML do ingress-nginx controller | `string` | `""` | no |
 | <a name="input_install_argocd"></a> [install\_argocd](#input\_install\_argocd) | Instalar ArgoCD via Helm | `bool` | `true` | no |
@@ -51,6 +55,7 @@ No modules.
 | <a name="input_install_metrics_server"></a> [install\_metrics\_server](#input\_install\_metrics\_server) | Instalar Metrics Server | `bool` | `true` | no |
 | <a name="input_instance_type"></a> [instance\_type](#input\_instance\_type) | Tipo da instância EC2 bootstrap | `string` | `"t3.micro"` | no |
 | <a name="input_kubectl_version"></a> [kubectl\_version](#input\_kubectl\_version) | Versão do kubectl | `string` | `"1.32.0"` | no |
+| <a name="input_metrics_server_version"></a> [metrics\_server\_version](#input\_metrics\_server\_version) | Versão do Metrics Server (v0.8.0+ tem bug com appProtocol, usar v0.7.2) | `string` | `"v0.7.2"` | no |
 | <a name="input_namespaces_yaml"></a> [namespaces\_yaml](#input\_namespaces\_yaml) | Conteúdo YAML dos namespaces a serem criados | `string` | `""` | no |
 | <a name="input_subnet_id"></a> [subnet\_id](#input\_subnet\_id) | Subnet ID privada (com NAT Gateway) para a instância bootstrap | `string` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | Tags adicionais | `map(string)` | `{}` | no |
