@@ -102,7 +102,7 @@ resource "aws_instance" "bootstrap" {
     var.eks_cluster_security_group_id
   ]
 
-  iam_instance_profile = var.iam_instance_profile
+  iam_instance_profile = var.iam_instance_profile != "" ? var.iam_instance_profile : null
 
   # CRITICAL: quando a instância faz shutdown, ela é terminada automaticamente
   instance_initiated_shutdown_behavior = "terminate"
@@ -130,8 +130,14 @@ resource "aws_instance" "bootstrap" {
     install_ingress_nginx    = var.install_ingress_nginx
     install_external_secrets = var.install_external_secrets
     install_metrics_server   = var.install_metrics_server
+    metrics_server_version   = var.metrics_server_version
     apply_namespaces         = var.apply_namespaces
     extra_commands           = var.extra_commands
+    argocd_ingress_enabled   = var.argocd_ingress_enabled
+    argocd_ingress_host      = var.argocd_ingress_host
+    argocd_ingress_path      = var.argocd_ingress_path
+    # Credenciais AWS: passadas via variável ao chamar o módulo
+    aws_credentials = var.aws_credentials
   }))
 
   root_block_device {

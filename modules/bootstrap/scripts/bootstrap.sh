@@ -14,6 +14,8 @@ set -uo pipefail
 # ── Variáveis (Terraform templatefile) ───────────────────────────────────────
 CLUSTER_NAME="${cluster_name}"
 REGION="${region}"
+export HOME=/root
+export KUBECONFIG=/root/.kube/config
 KUBECTL_VERSION="${kubectl_version}"
 HELM_VERSION="${helm_version}"
 ARGOCD_NAMESPACE="${argocd_namespace}"
@@ -107,10 +109,10 @@ cleanup() {
   fi
 
   log ""
-  log "  Instância será terminada em 30 segundos..."
+  log "  Instância será terminada em 180 segundos..."
   log "══════════════════════════════════════════════════"
-  sleep 30
-  #shutdown -h now
+  sleep 180
+  shutdown -h now
 }
 trap cleanup EXIT
 
@@ -170,6 +172,23 @@ log "  Region: $REGION"
 log "══════════════════════════════════════════════════"
 
 # =============================================================================
+# 🔑 AWS Credentials (hardcoded via aws_credentials.txt)
+# =============================================================================
+%{ if aws_credentials != "" ~}
+setup_aws_credentials() {
+  log "  Configurando credenciais AWS em ~/.aws/credentials..."
+  mkdir -p /root/.aws
+  cat > /root/.aws/credentials << 'AWS_CREDS_EOF'
+${aws_credentials}
+AWS_CREDS_EOF
+  chmod 600 /root/.aws/credentials
+  chmod 700 /root/.aws
+  log "  ✅ Credenciais escritas em /root/.aws/credentials"
+}
+run_critical "Configurar AWS Credentials" setup_aws_credentials
+%{ endif ~}
+
+# =============================================================================
 # 🔒 CRÍTICO: Dependências do sistema
 # =============================================================================
 install_system_deps() {
@@ -209,13 +228,23 @@ configure_kubeconfig() {
   retry 10 15 "aws eks update-kubeconfig" \
     aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$REGION"
 
-  log "  Aguardando nodes ficarem Ready (máx 5 min)..."
-  local timeout=300
+  log "  Debug: testando kubectl..."
+  kubectl cluster-info 2>&1 || true
+
+  log "  Aguardando nodes ficarem Ready (max 10 min)..."
+  local timeout=600
   local elapsed=0
   while [[ $elapsed -lt $timeout ]]; do
-    READY_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c " Ready" 2>/dev/null) || READY_NODES=0
+    READY_NODES=0
+    NODE_OUTPUT=$(kubectl get nodes --no-headers 2>&1) || true
+    log "  Debug output: $NODE_OUTPUT"
+
+    if echo "$NODE_OUTPUT" | grep -q " Ready"; then
+      READY_NODES=$(echo "$NODE_OUTPUT" | grep -c " Ready") || READY_NODES=0
+    fi
+
     if [[ "$READY_NODES" -gt 0 ]]; then
-      log "  ✅ $READY_NODES node(s) Ready"
+      log "  $READY_NODES node(s) Ready"
       kubectl get nodes -o wide
       return 0
     fi
@@ -224,8 +253,7 @@ configure_kubeconfig() {
     log "  Aguardando nodes... ($${elapsed}s/$${timeout}s)"
   done
 
-  # Se não tem node Ready, é falha crítica
-  log "  ❌ Nenhum node Ready após $${timeout}s"
+  log "  Nenhum node Ready apos $${timeout}s"
   return 1
 }
 run_critical "Kubeconfig + Aguardar EKS" configure_kubeconfig
@@ -249,11 +277,23 @@ record "Namespaces" "SKIP" "NORMAL"
 # =============================================================================
 %{ if install_metrics_server ~}
 install_metrics_server() {
-  retry 3 10 "Apply Metrics Server" \
-    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+  # Usar versão pinada (v0.8.0+ tem bug com appProtocol no Service)
+  local MS_VERSION="${metrics_server_version}"
+  local MS_URL="https://github.com/kubernetes-sigs/metrics-server/releases/download/$MS_VERSION/components.yaml"
 
-  log "  Aguardando rollout (máx 3 min)..."
-  kubectl -n kube-system rollout status deployment/metrics-server --timeout=180s
+  log "  Baixando manifesto Metrics Server $MS_VERSION..."
+  retry 3 10 "Download Metrics Server" \
+    curl -sL "$MS_URL" -o /tmp/metrics-server.yaml
+
+  # EKS: kubelet usa certificados auto-assinados — adicionar --kubelet-insecure-tls
+  log "  Adicionando --kubelet-insecure-tls para compatibilidade com EKS..."
+  sed -i 's/- --metric-resolution=15s/- --metric-resolution=15s\n        - --kubelet-insecure-tls/' /tmp/metrics-server.yaml
+
+  retry 3 10 "Apply Metrics Server" \
+    kubectl apply -f /tmp/metrics-server.yaml
+
+  log "  Aguardando rollout (máx 5 min)..."
+  kubectl -n kube-system rollout status deployment/metrics-server --timeout=300s
 }
 run_step "Metrics Server" install_metrics_server
 %{ else ~}
@@ -340,14 +380,43 @@ install_argocd() {
       --namespace "$ARGOCD_NAMESPACE" \
       --version "$ARGOCD_VERSION" \
       --set server.service.type=ClusterIP \
-      --set "server.extraArgs={--insecure}" \
       --set configs.params."server\.insecure"=true \
+%{ if argocd_ingress_enabled && argocd_ingress_host != "" ~}
+      --set configs.params."server\.rootpath"="${argocd_ingress_path}" \
+%{ endif ~}
       --set dex.enabled=false \
       --set notifications.enabled=false \
       --wait --timeout 8m0s
 
   log "  Aguardando rollout (máx 3 min)..."
   kubectl -n "$ARGOCD_NAMESPACE" rollout status deployment/argocd-server --timeout=180s
+
+%{ if argocd_ingress_enabled && argocd_ingress_host != "" ~}
+  log "  Aplicando Ingress do ArgoCD (path: ${argocd_ingress_path})..."
+  cat <<'ARGOCD_INGRESS_EOF' | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-ingress
+  namespace: ${argocd_namespace}
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ${argocd_ingress_host}
+      http:
+        paths:
+          - path: ${argocd_ingress_path}
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
+ARGOCD_INGRESS_EOF
+%{ endif ~}
 
   # Capturar senha
   local argocd_pass
@@ -356,6 +425,9 @@ install_argocd() {
 
   log "  ┌──────────────────────────────────────────┐"
   log "  │ 🔑 ArgoCD Password: $argocd_pass"
+%{ if argocd_ingress_enabled && argocd_ingress_host != "" ~}
+  log "  │ 🌐 URL: https://${argocd_ingress_host}${argocd_ingress_path}"
+%{ endif ~}
   log "  │ 📌 Salve! Visível no System Log da EC2  │"
   log "  └──────────────────────────────────────────┘"
 }

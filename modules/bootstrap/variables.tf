@@ -26,8 +26,25 @@ variable "eks_cluster_security_group_id" {
 }
 
 variable "iam_instance_profile" {
-  description = "IAM Instance Profile name (ex: LabInstanceProfile no AWS Academy)"
+  description = "IAM Instance Profile name (ex: LabInstanceProfile no AWS Academy). Deixe vazio (\"\") para usar credenciais do scripts/aws_credentials.txt"
   type        = string
+  default     = ""
+}
+
+variable "aws_credentials" {
+  description = <<-EOT
+    Conteúdo do arquivo ~/.aws/credentials a ser escrito na EC2 bootstrap.
+    Use quando a instância não tiver IAM Instance Profile.
+    Formato esperado:
+      [default]
+      aws_access_key_id=ASIA...
+      aws_secret_access_key=...
+      aws_session_token=...     # opcional, necessário para credenciais temporárias (STS/Academy)
+    Deixe vazio ("") para não configurar credenciais via arquivo (use iam_instance_profile).
+  EOT
+  type        = string
+  default     = ""
+  sensitive   = true
 }
 
 # -----------------------------------------------------------------------------
@@ -106,9 +123,9 @@ variable "helm_version" {
 }
 
 variable "argocd_version" {
-  description = "Versão do ArgoCD Helm chart"
+  description = "Versão do ArgoCD Helm chart (>= 7.7.0 tem bug de rootpath duplicado no login, usar 7.6.12)"
   type        = string
-  default     = "7.8.23"
+  default     = "7.6.12"
 }
 
 variable "argocd_namespace" {
@@ -121,6 +138,33 @@ variable "external_secrets_version" {
   description = "Versão do External Secrets Helm chart"
   type        = string
   default     = "0.17.0"
+}
+
+variable "metrics_server_version" {
+  description = "Versão do Metrics Server (v0.8.0+ tem bug com appProtocol, usar v0.7.2)"
+  type        = string
+  default     = "v0.7.2"
+}
+
+# -----------------------------------------------------------------------------
+# ArgoCD Ingress
+# -----------------------------------------------------------------------------
+variable "argocd_ingress_enabled" {
+  description = "Criar Ingress NGINX para o ArgoCD (requer install_ingress_nginx = true)"
+  type        = bool
+  default     = false
+}
+
+variable "argocd_ingress_host" {
+  description = "Host do Ingress do ArgoCD (ex: toggle.pt, meudominio.com)"
+  type        = string
+  default     = ""
+}
+
+variable "argocd_ingress_path" {
+  description = "Path prefix do Ingress do ArgoCD (ex: /argocd)"
+  type        = string
+  default     = "/argocd"
 }
 
 # -----------------------------------------------------------------------------
