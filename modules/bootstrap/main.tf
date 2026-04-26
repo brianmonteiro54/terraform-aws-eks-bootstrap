@@ -91,6 +91,7 @@ resource "aws_security_group" "bootstrap" {
 # Bootstrap EC2 Instance
 # -----------------------------------------------------------------------------
 resource "aws_instance" "bootstrap" {
+  #checkov:skip=CKV2_AWS_41: "AWS Academy does not support IAM roles"
   ami           = data.aws_ami.amazon_linux_2023.id
   instance_type = var.instance_type
   subnet_id     = var.subnet_id
@@ -133,6 +134,7 @@ resource "aws_instance" "bootstrap" {
     metrics_server_version   = var.metrics_server_version
     apply_namespaces         = var.apply_namespaces
     extra_commands           = var.extra_commands
+    additional_manifests     = var.additional_manifests
     argocd_ingress_enabled   = var.argocd_ingress_enabled
     argocd_ingress_host      = var.argocd_ingress_host
     argocd_ingress_path      = var.argocd_ingress_path

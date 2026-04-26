@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   ci:
-    uses: brianmonteiro54/devops-template/.github/workflows/terraform-ci.yml@v2.0.0
+    uses: brianmonteiro54/devops-template/.github/workflows/terraform-ci.yml@v2.1.0
     with:
       terraform-docs-working-dir: modules/bootstrap
       enable-plan-preview: false

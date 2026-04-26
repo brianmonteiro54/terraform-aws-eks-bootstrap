@@ -33,6 +33,7 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_additional_manifests"></a> [additional\_manifests](#input\_additional\_manifests) | Manifestos K8s adicionais para aplicar APÓS namespaces, ingress-nginx,<br/>external-secrets e ArgoCD estarem prontos. Mapa de nome → conteúdo YAML. | `map(string)` | `{}` | no |
 | <a name="input_apply_namespaces"></a> [apply\_namespaces](#input\_apply\_namespaces) | Aplicar namespaces YAML | `bool` | `true` | no |
 | <a name="input_argocd_ingress_enabled"></a> [argocd\_ingress\_enabled](#input\_argocd\_ingress\_enabled) | Criar Ingress NGINX para o ArgoCD (requer install\_ingress\_nginx = true) | `bool` | `false` | no |
 | <a name="input_argocd_ingress_host"></a> [argocd\_ingress\_host](#input\_argocd\_ingress\_host) | Host do Ingress do ArgoCD (ex: toggle.pt, meudominio.com) | `string` | `""` | no |
