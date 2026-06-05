@@ -117,7 +117,7 @@ resource "aws_instance" "bootstrap" {
 
   user_data_base64 = base64gzip(templatefile("${path.module}/scripts/bootstrap.sh", {
     cluster_name             = var.cluster_name
-    region                   = data.aws_region.current.id
+    region                   = data.aws_region.current.region
     kubectl_version          = var.kubectl_version
     helm_version             = var.helm_version
     argocd_namespace         = var.argocd_namespace
